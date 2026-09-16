@@ -71,6 +71,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/herdr";
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/settings.json";
+  # Herdr installs its agent-state hook here and rewrites it on update, so the
+  # directory is linked out-of-store rather than copied into the store.
+  home.file.".claude/hooks".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/hooks";
 
   # Keep Pi's credential and runtime state local by linking only authored files and directories.
   home.file.".pi/agent/themes".source =
