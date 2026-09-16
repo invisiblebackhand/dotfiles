@@ -15,12 +15,17 @@ in
     fzf       # fuzzy finder
     jq        # json on the command line
     lazygit
-    neovim
     # the font everything renders in
     nerd-fonts.hack
   ];
   fonts.fontconfig.enable = true;
-  home.sessionVariables.EDITOR = "nvim";
+  home.sessionVariables.EDITOR = "vim";
+
+  programs.git = {
+    enable = true;
+    settings.user.name = "Noah von Maur";
+    settings.user.email = "316698371+invisiblebackhand@users.noreply.github.com";
+  };
 
   programs.zsh = {
     enable = true;
@@ -28,6 +33,16 @@ in
     syntaxHighlighting.enable = true;  # commands turn green when valid
     initContent = ''
       bindkey '^f' autosuggest-accept
+
+      # --- ported from ~/.zshrc at the 2026-09-16 baseline ---
+      # Rotation Console / trade-console build toolchain
+      export JAVA_HOME="$HOME/dev/trade-console/.build-tools/jdk-25.0.4+7/Contents/Home"
+      export PATH="$HOME/dev/trade-console/.build-tools/apache-maven-3.9.16/bin:$PATH"
+
+      # npm global prefix (npm config set prefix ~/.npm-global)
+      export PATH="$HOME/.npm-global/bin:$PATH"
+      # user-local binaries; the native claude installer lives here
+      export PATH="$HOME/.local/bin:$PATH"
     '';
     shellAliases = {
       ".." = "cd ..";
@@ -35,8 +50,6 @@ in
       push = "git push";
       pull = "git pull";
       m = "git switch main";
-      cc = "claude --dangerously-skip-permissions";
-      co = "codex --full-auto";
     };
   };
 
@@ -54,10 +67,6 @@ in
   };
 
   # Edit-in-place: the real file stays in my repo, ~/.config just points at it.
-  home.file.".config/wezterm".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/wezterm";
-  home.file.".config/nvim".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/nvim";
   home.file.".config/herdr".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/herdr";
   home.file.".claude/settings.json".source =
@@ -76,7 +85,5 @@ in
   home.file.".claude/CLAUDE.md".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
   home.file.".codex/AGENTS.md".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
-  home.file.".config/opencode/AGENTS.md".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
 }
