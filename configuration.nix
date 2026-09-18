@@ -1,4 +1,4 @@
-{ user, ... }:
+{ config, user, ... }:
 
 {
   # Determinate already manages the Nix daemon, so nix-darwin shouldn't.
@@ -12,6 +12,53 @@
     home = "/Users/${user}";
   };
   system.stateVersion = 6;
+
+  # Self-heal for zsh sessions that inherit nix-darwin's "environment already
+  # set" flag without the PATH that belongs to it. Seen 2026-09-18: Terminal.app
+  # was relaunched by an AppleScript from an agent shell, inherited
+  # __NIX_DARWIN_SET_ENVIRONMENT_DONE=1, and every new window was born with
+  # PATH=/usr/bin:/bin because /etc/zshenv trusted the flag and skipped
+  # set-environment. nix-darwin emits shellInit into /etc/zshenv inside its
+  # `[[ -o rcs ]]` block, directly after that gate and before ~/.zshenv,
+  # /etc/zshrc (Homebrew) and ~/.zshrc (the PATH prepends), so the repair runs
+  # before anything builds on PATH. The condition tests the PATH, not the flag,
+  # so a renamed flag cannot silence it. Every repair appends one line to
+  # ~/.local/state/nix-darwin-path-guard.log and, in interactive shells, prints
+  # one stderr warning, so a recurring launcher stays visible instead of being
+  # papered over. The line also records the first 512 characters of the
+  # pre-repair PATH and discards the remainder: once the guard has run, that
+  # field is the only surviving evidence of what the parent handed over, and
+  # the evidence-bearing entries (a probe marker, the three ~/.zshrc prepends)
+  # are at the start of the string. Log bound: before appending, if the file
+  # exceeds 64 KiB only its last 200 lines are kept, so the file stays under
+  # 64 KiB plus one line. zsh builtins only; no fork unless the state
+  # directory is missing. Regression test: tests/path-guard.test.sh.
+  programs.zsh.shellInit = ''
+    if [[ ":$PATH:" != *":/run/current-system/sw/bin:"* ]]; then
+      __nix_darwin_path_guard() {
+        local log="''${XDG_STATE_HOME:-$HOME/.local/state}/nix-darwin-path-guard.log"
+        local -a size lines
+        local fmt='%D{%Y-%m-%d %H:%M:%S}' stamp mode=n found="''${PATH-}"
+        stamp="''${(%)fmt}"
+        unset __NIX_DARWIN_SET_ENVIRONMENT_DONE __HM_SESS_VARS_SOURCED
+        . ${config.system.build.setEnvironment}
+        [[ -d "''${log:h}" ]] || mkdir -p "''${log:h}" 2>/dev/null
+        if zmodload -F zsh/stat b:zstat 2>/dev/null \
+          && zstat -A size +size -- "$log" 2>/dev/null && (( size[1] > 65536 )); then
+          lines=("''${(@f)$(<"$log")}")
+          (( $#lines > 200 )) && print -rl -- "''${(@)lines[-200,-1]}" > "$log" 2>/dev/null
+        fi
+        [[ -o interactive ]] && mode=y
+        print -r -- "$stamp pid=$$ ppid=$PPID term=''${TERM_PROGRAM:-?} interactive=$mode path=''${found[1,512]}" >> "$log" 2>/dev/null
+        if [[ -o interactive ]]; then
+          print -u2 "nix-darwin: PATH lacked /run/current-system/sw/bin; environment re-applied (log: $log)"
+        fi
+        return 0
+      }
+      __nix_darwin_path_guard
+      unfunction __nix_darwin_path_guard
+    fi
+  '';
 
   # No `system.defaults` block, and no networking.hostName / computerName /
   # localHostName. Deliberate: this machine runs licensed trading software
