@@ -23,6 +23,10 @@ in
   ];
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
+  # firstmate's calm mode rides claude code's early-access function-hooks api;
+  # the plugin registers nothing at all unless this is exactly "1", so no /calm
+  # command exists without it. do not remove.
+  home.sessionVariables.CLAUDE_CODE_ENABLE_FUNCTION_HOOKS = "1";
 
   programs.git = {
     enable = true;
