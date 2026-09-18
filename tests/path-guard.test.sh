@@ -142,7 +142,7 @@ out=$(run_zsh __NIX_DARWIN_SET_ENVIRONMENT_DONE=1 __HM_SESS_VARS_SOURCED=1 PATH=
 [ ! -e "$LOG" ] || fail "guard fired on a healthy inherited environment"
 pass "path-guard: clean and healthy inherited environments are left alone"
 
-# --- 5. the log is bounded: over 64 KiB keeps only the last 200 lines -----------
+# --- 5. the log is bounded: over 64 KiB keeps only the last 100 lines -----------
 
 i=0
 : > "$LOG"
@@ -153,8 +153,7 @@ done
 [ "$(wc -c < "$LOG")" -gt 65536 ] || fail "fixture log is not over the 64 KiB threshold"
 run_zsh __NIX_DARWIN_SET_ENVIRONMENT_DONE=1 PATH=/usr/bin:/bin /bin/zsh -c ':' >/dev/null
 n=$(log_lines)
-[ "$n" -le 201 ] || fail "log was not truncated: $n lines remain"
-[ "$n" -ge 100 ] || fail "log lost its most recent lines: only $n remain"
-head -n 1 "$LOG" | grep -q '^old entry 2' || fail "log kept the head instead of the tail"
+[ "$n" -eq 101 ] || fail "log should retain 100 lines plus the new entry, got $n"
+head -n 1 "$LOG" | grep -q '^old entry 2900' || fail "log kept the wrong portion of the tail"
 tail -n 1 "$LOG" | grep -q 'interactive=n' || fail "new entry was not appended after truncation"
-pass "path-guard: log over 64 KiB is cut to its last 200 lines before appending"
+pass "path-guard: log over 64 KiB is cut to its last 100 lines before appending"

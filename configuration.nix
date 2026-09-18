@@ -30,9 +30,9 @@
   # field is the only surviving evidence of what the parent handed over, and
   # the evidence-bearing entries (a probe marker, the three ~/.zshrc prepends)
   # are at the start of the string. Log bound: before appending, if the file
-  # exceeds 64 KiB only its last 200 lines are kept, so the file stays under
-  # 64 KiB plus one line. zsh builtins only; no fork unless the state
-  # directory is missing. Regression test: tests/path-guard.test.sh.
+  # exceeds 64 KiB only its last 100 lines are kept, so its worst case of 100
+  # 592-byte records stays under 64 KiB. zsh builtins only; no fork unless the
+  # state directory is missing. Regression test: tests/path-guard.test.sh.
   programs.zsh.shellInit = ''
     if [[ ":$PATH:" != *":/run/current-system/sw/bin:"* ]]; then
       __nix_darwin_path_guard() {
@@ -46,7 +46,7 @@
         if zmodload -F zsh/stat b:zstat 2>/dev/null \
           && zstat -A size +size -- "$log" 2>/dev/null && (( size[1] > 65536 )); then
           lines=("''${(@f)$(<"$log")}")
-          (( $#lines > 200 )) && print -rl -- "''${(@)lines[-200,-1]}" > "$log" 2>/dev/null
+          (( $#lines > 100 )) && print -rl -- "''${(@)lines[-100,-1]}" > "$log" 2>/dev/null
         fi
         [[ -o interactive ]] && mode=y
         print -r -- "$stamp pid=$$ ppid=$PPID term=''${TERM_PROGRAM:-?} interactive=$mode path=''${found[1,512]}" >> "$log" 2>/dev/null
