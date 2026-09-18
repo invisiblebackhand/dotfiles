@@ -1,5 +1,6 @@
 {
   "theme": "dark-ansi",
+  "preferredNotifChannel": "terminal_bell",
   "hooks": {
     "SessionStart": [
       {
