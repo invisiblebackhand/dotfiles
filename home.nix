@@ -27,6 +27,9 @@ in
   # the plugin registers nothing at all unless this is exactly "1", so no /calm
   # command exists without it. do not remove.
   home.sessionVariables.CLAUDE_CODE_ENABLE_FUNCTION_HOOKS = "1";
+  # cap claude code's context at 500k; /config replaces its settings symlink,
+  # so this persistent environment override must not be removed.
+  home.sessionVariables.CLAUDE_CODE_AUTO_COMPACT_WINDOW = "500000";
 
   programs.git = {
     enable = true;
